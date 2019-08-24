@@ -1,14 +1,16 @@
 import sys
 import pandas as pd
 import numpy as np
-# print(sys.argv)
+print(sys.argv)
 
 groundTruePath = sys.argv[1]
 predictionPath = sys.argv[2]
 
 
-groundTrue = pd.read_csv(groundTruePath,sep='\t', header=None)
+groundTrue = pd.read_csv(groundTruePath, sep='\t', header=None)
 predicted = pd.read_csv(predictionPath)
+
+
 groundTrueList = list(groundTrue[0])
 predictedList = list(predicted['Predicted'])
 
