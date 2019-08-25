@@ -6,3 +6,8 @@ data/BERT_encoding/
 data/paired_sentences.csv
 best_weights_tough_head.hdf5
 
+.ipynb_checkpoints/
+data/BERT_encoding.zip
+data/BERT_encoding/
+
+
