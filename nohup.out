@@ -67,3 +67,65 @@ Shutdown this notebook server (y/[n])? [C 11:50:23.146 NotebookApp] received sig
 [W 11:50:49.587 NotebookApp] delete /Untitled.ipynb
 [I 11:50:51.467 NotebookApp] Discarding 11 buffered messages for 32d1d3fa-5abb-46df-94c8-afeac9e4273e:6ce03bc8a8024a2b8039d6e840c5e52c
 [I 11:50:51.779 NotebookApp] Kernel shutdown: 32d1d3fa-5abb-46df-94c8-afeac9e4273e
+[I 12:29:34.080 NotebookApp] The port 8888 is already in use, trying another port.
+[I 12:29:34.082 NotebookApp] The port 8889 is already in use, trying another port.
+[I 12:29:34.127 NotebookApp] [jupyter_nbextensions_configurator] enabled 0.4.1
+[I 12:29:34.128 NotebookApp] Serving notebooks from local directory: /Users/wenbin/Desktop/SML_Proj/COMP90051-Project1
+[I 12:29:34.128 NotebookApp] The Jupyter Notebook is running at:
+[I 12:29:34.128 NotebookApp] http://localhost:8890/?token=2da3514c45d72985ce21fd509975cf5da90c8acc368d3154
+[I 12:29:34.128 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 12:29:34.135 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///Users/wenbin/Library/Jupyter/runtime/nbserver-4086-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8890/?token=2da3514c45d72985ce21fd509975cf5da90c8acc368d3154
+[I 12:29:39.146 NotebookApp] Kernel started: ed0e7142-a971-462a-b9e8-6683cffecef9
+[W 12:29:39.483 NotebookApp] 404 GET /nbextensions/widgets/notebook/js/extension.js?v=20190825122933 (::1) 13.08ms referer=http://localhost:8890/notebooks/GeneratePair.ipynb
+[I 12:29:40.000 NotebookApp] Adapting to protocol v5.1 for kernel ed0e7142-a971-462a-b9e8-6683cffecef9
+[I 12:30:04.707 NotebookApp] Kernel interrupted: ed0e7142-a971-462a-b9e8-6683cffecef9
+[I 12:30:35.130 NotebookApp] Kernel interrupted: ed0e7142-a971-462a-b9e8-6683cffecef9
+[I 12:31:22.961 NotebookApp] Kernel interrupted: ed0e7142-a971-462a-b9e8-6683cffecef9
+[I 12:31:32.385 NotebookApp] Kernel interrupted: ed0e7142-a971-462a-b9e8-6683cffecef9
+[I 12:31:38.059 NotebookApp] Kernel interrupted: ed0e7142-a971-462a-b9e8-6683cffecef9
+[I 12:31:39.130 NotebookApp] Saving file at /GeneratePair.ipynb
+[I 12:31:41.751 NotebookApp] Saving file at /GeneratePair.ipynb
+[I 12:31:55.936 NotebookApp] Starting buffering for ed0e7142-a971-462a-b9e8-6683cffecef9:1ebbd5a0f39940708d5334031a906641
+[C 12:32:08.982 NotebookApp] received signal 15, stopping
+[I 12:32:08.983 NotebookApp] Shutting down 1 kernel
+[C 12:32:08.993 NotebookApp] received signal 15, stopping
+[I 12:32:09.005 NotebookApp] Shutting down 0 kernels
+[I 12:33:24.155 NotebookApp] [jupyter_nbextensions_configurator] enabled 0.4.1
+[I 12:33:24.156 NotebookApp] Serving notebooks from local directory: /Users/wenbin/Desktop/SML_Proj/COMP90051-Project1
+[I 12:33:24.156 NotebookApp] The Jupyter Notebook is running at:
+[I 12:33:24.156 NotebookApp] http://localhost:8888/?token=3e77349aa16d817dcc017f37dc9b18188df28fa8d77a37f9
+[I 12:33:24.156 NotebookApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[C 12:33:24.162 NotebookApp] 
+    
+    To access the notebook, open this file in a browser:
+        file:///Users/wenbin/Library/Jupyter/runtime/nbserver-649-open.html
+    Or copy and paste one of these URLs:
+        http://localhost:8888/?token=3e77349aa16d817dcc017f37dc9b18188df28fa8d77a37f9
+[W 12:33:29.912 NotebookApp] Notebook SaveEmbeddings.ipynb is not trusted
+[I 12:33:30.335 NotebookApp] Kernel started: 597b6aae-5848-4745-9c56-2054dab6242c
+[W 12:33:30.809 NotebookApp] 404 GET /nbextensions/widgets/notebook/js/extension.js?v=20190825123323 (::1) 14.11ms referer=http://localhost:8888/notebooks/SaveEmbeddings.ipynb
+[I 12:33:31.160 NotebookApp] Adapting to protocol v5.1 for kernel 597b6aae-5848-4745-9c56-2054dab6242c
+[I 12:33:33.729 NotebookApp] Saving file at /SaveEmbeddings.ipynb
+[W 12:33:33.730 NotebookApp] Notebook SaveEmbeddings.ipynb is not trusted
+[I 12:33:33.768 NotebookApp] Starting buffering for 597b6aae-5848-4745-9c56-2054dab6242c:979bede5124b45aa82cd2c97dacafe88
+[I 12:33:40.298 NotebookApp] Kernel started: c8b00519-16ce-4137-b090-4b3249689b1c
+[W 12:33:40.571 NotebookApp] 404 GET /nbextensions/widgets/notebook/js/extension.js?v=20190825123323 (::1) 3.24ms referer=http://localhost:8888/notebooks/GeneratePair.ipynb
+[I 12:33:41.127 NotebookApp] Adapting to protocol v5.1 for kernel c8b00519-16ce-4137-b090-4b3249689b1c
+[I 12:33:47.210 NotebookApp] Starting buffering for c8b00519-16ce-4137-b090-4b3249689b1c:7b113d49460d47a995ea38f694832557
+[I 12:33:47.528 NotebookApp] Kernel restarted: c8b00519-16ce-4137-b090-4b3249689b1c
+[I 12:33:48.226 NotebookApp] Adapting to protocol v5.1 for kernel c8b00519-16ce-4137-b090-4b3249689b1c
+[I 12:33:48.226 NotebookApp] Restoring connection for c8b00519-16ce-4137-b090-4b3249689b1c:7b113d49460d47a995ea38f694832557
+[I 12:33:48.227 NotebookApp] Replaying 6 buffered messages
+[I 12:34:46.157 NotebookApp] Kernel interrupted: c8b00519-16ce-4137-b090-4b3249689b1c
+[I 12:34:58.598 NotebookApp] Starting buffering for c8b00519-16ce-4137-b090-4b3249689b1c:7b113d49460d47a995ea38f694832557
+[I 12:34:59.816 NotebookApp] Adapting to protocol v5.1 for kernel c8b00519-16ce-4137-b090-4b3249689b1c
+[I 12:34:59.817 NotebookApp] Restoring connection for c8b00519-16ce-4137-b090-4b3249689b1c:7b113d49460d47a995ea38f694832557
+[C 12:35:01.627 NotebookApp] received signal 15, stopping
+[I 12:35:01.628 NotebookApp] Shutting down 2 kernels
+[I 12:35:01.938 NotebookApp] Kernel shutdown: 597b6aae-5848-4745-9c56-2054dab6242c
+[I 12:35:07.687 NotebookApp] Kernel shutdown: c8b00519-16ce-4137-b090-4b3249689b1c
