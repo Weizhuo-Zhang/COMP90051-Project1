@@ -199,12 +199,12 @@ class MyProcessor(DataProcessor):
   def get_train_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
+        self._read_tsv(os.path.join(data_dir, "paired_sentences_train.csv")), "train")
 
   def get_dev_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
+        self._read_tsv(os.path.join(data_dir, "paired_sentences_dev.csv")), "dev")
 
   def get_test_examples(self, data_dir):
     """See base class."""
@@ -219,8 +219,8 @@ class MyProcessor(DataProcessor):
     """Creates examples for the training and dev sets."""
     examples = []
     for (i, line) in enumerate(lines):
-      if i == 0:
-        continue
+#       if i == 0:
+#         continue
       guid = "%s-%s" % (set_type, i)
       text_a = tokenization.convert_to_unicode(line[0])
       text_b = tokenization.convert_to_unicode(line[1])
@@ -806,7 +806,7 @@ def main(_):
       "mnli": MnliProcessor,
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
-      "myown": MyProcessor,
+      "mypair": MyProcessor,
       "myown2": MyProcessor2,
   }
 
