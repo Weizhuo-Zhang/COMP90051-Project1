@@ -1,3 +1,6 @@
+Train_pair/paired_sentences_dev.csv
+Train_pair/paired_sentences_train.csv
+
 .ipynb_checkpoints/BERT_MLP-checkpoint.ipynb
 .ipynb_checkpoints/GeneratePair-checkpoint.ipynb
 
