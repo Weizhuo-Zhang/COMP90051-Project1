@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 from tqdm import tqdm
 from pytorch_transformers import BertTokenizer, BertModel, BertForSequenceClassification
-from models.coconut_model_2 import CoconutModel
-from models.coconut_extract_2 import CoconutFeatureExtract
+from models.coconut_model_v2 import CoconutModel
+from models.coconut_extract_v2 import CoconutFeatureExtract
 from project_dataset import ProjectDataset
 from torch.utils.data import DataLoader
 from utils.utils import AverageMeter

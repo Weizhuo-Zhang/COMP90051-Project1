@@ -1,5 +1,5 @@
 import torch
-from models.coconut_extract_2 import CoconutFeatureExtract
+from models.coconut_extract_v2 import CoconutFeatureExtract
 from pytorch_transformers import BertTokenizer, BertModel
 from coconut_train import prepare_data_for_coconut_model
 
