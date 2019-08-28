@@ -199,12 +199,12 @@ class MyProcessor(DataProcessor):
   def get_train_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "paired_sentences_train.csv")), "train")
+        self._read_tsv(os.path.join(data_dir, "paired_sentences_train_new.csv")), "train")
 
   def get_dev_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "paired_sentences_dev.csv")), "dev")
+        self._read_tsv(os.path.join(data_dir, "paired_sentences_dev_new.csv")), "dev")
 
   def get_test_examples(self, data_dir):
     """See base class."""
