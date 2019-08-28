@@ -12,7 +12,7 @@ class FeatureExtract:
         self.model = CoconutModel(feature_size=feature_size)
         if torch.cuda.is_available():
             self.model = self.model.cuda()
-            self.bert_model = self.bert_model.cuda()
+            #self.bert_model = self.bert_model.cuda()
             self.device = torch.device('cuda')
         else:
             self.device = torch.device('cpu')
@@ -32,8 +32,9 @@ class FeatureExtract:
         with torch.no_grad():
             features = self.model(sentences)
         if torch.cuda.is_available():
-            return features.cpu().detach().numpy()
-        return features.numpy()
+            features = features.cpu().detach().numpy()
+            torch.cuda.empty_cache()
+        return features
 
 
 if __name__ == '__main__':
