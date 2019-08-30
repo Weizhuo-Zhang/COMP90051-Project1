@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 
-k = 11
+k = 21
 split_num = os.getcwd().split('/')[-1].split("split_")[-1]
 
 train_feature_path = "train_feature.npy"
