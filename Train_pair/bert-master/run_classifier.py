@@ -82,9 +82,9 @@ flags.DEFINE_bool("do_predict", False, "Whether to run the model in inference mo
 
 flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
 
-flags.DEFINE_integer("eval_batch_size", 1024, "Total batch size for eval.")
+flags.DEFINE_integer("eval_batch_size", 1536, "Total batch size for eval.")
 
-flags.DEFINE_integer("predict_batch_size", 1024, "Total batch size for predict.")
+flags.DEFINE_integer("predict_batch_size", 1536, "Total batch size for predict.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
@@ -212,7 +212,7 @@ class MyProcessor(DataProcessor):
   def get_test_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "new_split_pair_dev.txt")), "test")
+        self._read_tsv(os.path.join(data_dir, "new_split_pair_test_k_50.txt")), "test")
 
   def get_labels(self):
     """See base class."""
@@ -222,8 +222,8 @@ class MyProcessor(DataProcessor):
     """Creates examples for the training and dev sets."""
     examples = []
     for (i, line) in enumerate(lines):
-#       if i == 0:
-#         continue
+      if i == 0:
+          continue
       guid = "%s-%s" % (set_type, i)
       text_a = tokenization.convert_to_unicode(line[0])
       text_b = tokenization.convert_to_unicode(line[1])
