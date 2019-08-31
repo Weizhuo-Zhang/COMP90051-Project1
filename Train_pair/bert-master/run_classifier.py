@@ -26,6 +26,9 @@ import optimization
 import tokenization
 import tensorflow as tf
 
+import numpy as np
+all_classes = list(np.load('../all_users.npy'))
+
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 sess = tf.Session(config=config)
@@ -79,9 +82,9 @@ flags.DEFINE_bool("do_predict", False, "Whether to run the model in inference mo
 
 flags.DEFINE_integer("train_batch_size", 32, "Total batch size for training.")
 
-flags.DEFINE_integer("eval_batch_size", 128, "Total batch size for eval.")
+flags.DEFINE_integer("eval_batch_size", 1024, "Total batch size for eval.")
 
-flags.DEFINE_integer("predict_batch_size", 128, "Total batch size for predict.")
+flags.DEFINE_integer("predict_batch_size", 1024, "Total batch size for predict.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
@@ -199,17 +202,17 @@ class MyProcessor(DataProcessor):
   def get_train_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "paired_sentences_train_new.csv")), "train")
+        self._read_tsv(os.path.join(data_dir, "second_iter_train.csv")), "train")
 
   def get_dev_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "paired_sentences_dev_new.csv")), "dev")
+        self._read_tsv(os.path.join(data_dir, "new_split_pair_dev.txt")), "dev")
 
   def get_test_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "test.tsv")), "test")
+        self._read_tsv(os.path.join(data_dir, "new_split_pair_dev.txt")), "test")
 
   def get_labels(self):
     """See base class."""
@@ -233,17 +236,17 @@ class MyProcessor(DataProcessor):
     return examples
 
 
-class MyProcessor2(DataProcessor):
+class MyProcessorAll(DataProcessor):
 
   def get_train_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "train_top7_shuffle.tsv")), "train")
+        self._read_tsv(os.path.join(data_dir, "train_set_v1_4.csv")), "train")
 
   def get_dev_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "dev_top7.tsv")), "dev")
+        self._read_tsv(os.path.join(data_dir, "dev_set_v1_4.csv")), "dev")
 
   def get_test_examples(self, data_dir):
     """See base class."""
@@ -252,25 +255,21 @@ class MyProcessor2(DataProcessor):
 
   def get_labels(self):
     """See base class."""
-    return ["0", "1"]
+    return all_classes
 
   def _create_examples(self, lines, set_type):
     """Creates examples for the training and dev sets."""
     examples = []
     for (i, line) in enumerate(lines):
-      if i == 0:
-        continue
       guid = "%s-%s" % (set_type, i)
       text_a = tokenization.convert_to_unicode(line[1])
-      text_b = tokenization.convert_to_unicode(line[4])
       if set_type == "test":
         label = "0"
         text_a = tokenization.convert_to_unicode(line[1])
-        text_b = tokenization.convert_to_unicode(line[4])
       else:
-        label = tokenization.convert_to_unicode(line[3])
+        label = tokenization.convert_to_unicode(line[0])
       examples.append(
-          InputExample(guid=guid, text_a=text_a, text_b=text_b, label=label))
+          InputExample(guid=guid, text_a=text_a, label=label))
     return examples
 
 
@@ -807,7 +806,7 @@ def main(_):
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
       "mypair": MyProcessor,
-      "myown2": MyProcessor2,
+      "myall": MyProcessorAll,
   }
 
   if not FLAGS.do_train and not FLAGS.do_eval and not FLAGS.do_predict:
