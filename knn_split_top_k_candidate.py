@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 
-k = 21
+k = 101
 split_num = os.getcwd().split('/')[-1].split("split_")[-1]
 
 train_feature_path = "train_feature.npy"
@@ -42,4 +42,4 @@ candidate_sentence_list = train_sentence[candidate_index_list]
 pair_df = pd.DataFrame({'true_sentence':true_sentence_list,
                         'candidate_sentence':candidate_sentence_list,
                         'pair_result':candidate_label_true_false})
-pair_df.to_csv(pair_file_path, sep='\t', header=None, index=False)
+pair_df.to_csv(pair_file_path, sep='\t', index=False)

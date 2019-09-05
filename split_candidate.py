@@ -34,7 +34,7 @@ def _main(args):
     now = time.strftime("%Y_%m_%d_%H_%M_%S",time.localtime(time.time()))
     file_prefix = "data/split_{0}/split_".format(now)
 
-    k_folders = 2
+    k_folders = 6
     feature_mini_batches = get_k_folders(train_feature_set, k_folders)
     label_mini_batches = get_k_folders(train_label, k_folders)
     for i, feature_batch in enumerate(feature_mini_batches):
