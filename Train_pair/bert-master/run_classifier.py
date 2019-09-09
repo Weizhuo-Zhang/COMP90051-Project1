@@ -1,3 +1,4 @@
+# GOTO 206
 # coding=utf-8
 # Copyright 2018 The Google AI Language Team Authors.
 #
@@ -26,8 +27,8 @@ import optimization
 import tokenization
 import tensorflow as tf
 
-import numpy as np
-all_classes = list(np.load('../all_users.npy'))
+#import numpy as np
+#all_classes = list(np.load('../all_users.npy'))
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -202,17 +203,20 @@ class MyProcessor(DataProcessor):
   def get_train_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "second_iter_train.csv")), "train")
+        self._read_tsv(os.path.join(data_dir, "split_pair_positive_all_k_50.txt")), "train")
 
   def get_dev_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "new_split_pair_dev.txt")), "dev")
+        self._read_tsv(os.path.join(data_dir,
+            "")), "dev")
 
+  # GOTO 887
   def get_test_examples(self, data_dir):
     """See base class."""
     return self._create_examples(
-        self._read_tsv(os.path.join(data_dir, "new_split_pair_test_k_50.txt")), "test")
+        self._read_tsv(os.path.join(data_dir,
+            "pair_siamese_bert_base_cased_v7.0_triplet_epoch1_k_20_positive.txt")), "test")
 
   def get_labels(self):
     """See base class."""
@@ -881,7 +885,7 @@ def main(_):
       predict_batch_size=FLAGS.predict_batch_size)
 
   if FLAGS.do_train:
-    train_file = os.path.join(FLAGS.output_dir, "train.tf_record")
+    train_file = os.path.join(FLAGS.output_dir, "train_lemonbear_2epoch_k_50.tf_record")
     file_based_convert_examples_to_features(
         train_examples, label_list, FLAGS.max_seq_length, tokenizer, train_file)
     tf.logging.info("***** Running training *****")
@@ -897,7 +901,7 @@ def main(_):
 
   if FLAGS.do_eval:
     eval_examples = processor.get_dev_examples(FLAGS.data_dir)
-    eval_file = os.path.join(FLAGS.output_dir, "eval.tf_record")
+    eval_file = os.path.join(FLAGS.output_dir, "eval_lemonbear_2epoch_k_50.tf_record")
     file_based_convert_examples_to_features(
         eval_examples, label_list, FLAGS.max_seq_length, tokenizer, eval_file)
 
@@ -932,7 +936,9 @@ def main(_):
 
   if FLAGS.do_predict:
     predict_examples = processor.get_test_examples(FLAGS.data_dir)
-    predict_file = os.path.join(FLAGS.output_dir, "predict.tf_record")
+    predict_file = os.path.join(FLAGS.output_dir,
+            #"predict_lemonbear_dev_2epoch.tf_record")
+            "predict_test_triplet_1epoch.tf_record")
     file_based_convert_examples_to_features(predict_examples, label_list,
                                  FLAGS.max_seq_length, tokenizer, predict_file)
 

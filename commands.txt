@@ -1,0 +1,74 @@
+docker run -d --runtime=nvidia --name mydl -p 8888:8888 -p 6006:6006 -p 5555:5555 -p 5556:5556 -v /home/weizhuozhang/Desktop/:/share -it alanchaw/keras-gpu-jupyter:v1.1 bash
+
+docker exec -it mydl bash
+
+docker rm -f mydl
+
+
+bert-serving-start -model_dir=/share/cwb/cased_L-12_H-768_A-12 -tuned_model_dir=/share/begin_again_encode_2epoch -ckpt_name=model.ckpt-125000 -cased_tokenization -max_batch_size=2048 -max_seq_len=60 -gpu_memory_fraction=0.9 -num_worker=1
+
+bert-serving-start -model_dir=/share/cwb/cased_L-12_H-768_A-12 -cased_tokenization -max_batch_size=2048 -max_seq_len=60 -gpu_memory_fraction=0.9 -num_worker=1
+
+nohup jupyter notebook --notebook-dir=/share --ip 0.0.0.0 --no-browser --allow-root --NotebookApp.password='' --NotebookApp.token='' &
+
+tensorboard --logdir=./
+
+import tensorflow as tf
+sess = tf.Session(config=tf.ConfigProto(log_device_placement=True))
+
+export BERT_BASE_DIR=/share/ShareFolder/uncased_L-24_H-1024_A-16
+
+# Google Cloud Storage bert large model
+export BERT_BASE_DIR=gs://bert_models/2018_10_18/cased_L-24_H-1024_A-16
+
+
+export BERT_BASE_DIR=/share/cwb/cased_L-12_H-768_A-12
+export MY_DATASET=/share/cwb/COMP90051-Project1/Train_pair
+
+python run_classifier.py \
+  --task_name=mypair \
+  --do_train=false \
+  --do_eval=false \
+  --do_predict=true \
+  --data_dir=/share/cwb/COMP90051-Project1/Train_pair \
+  --vocab_file=$BERT_BASE_DIR/vocab.txt \
+  --bert_config_file=$BERT_BASE_DIR/bert_config.json \
+  --init_checkpoint=$BERT_BASE_DIR/bert_model.ckpt \
+  --do_lower_case=False \
+  --max_seq_length=60 \
+  --train_batch_size=32 \
+  --learning_rate=2e-5 \
+  --num_train_epochs=1.0 \
+  --output_dir=/share/begin_again_2nd_iter_k_50_623w_3epoch
+
+
+bert-serving-start \
+  -model_dir=/share/cwb/xlnet_cased_L-12_H-768_A-12 \
+  -tuned_model_dir=/share/xlnet_600w_1epoch/model \
+  -config_name=xlnet_config.json \
+  -ckpt_name=model.ckpt-23437 \
+  -max_batch_size=2048 \
+  -max_seq_len=60 \
+  -gpu_memory_fraction=0.9 \
+  -num_worker=1
+
+## XLNet
+
+export XLNET_BASE_DIR=/share/cwb/xlnet_cased_L-12_H-768_A-12
+export XLNET_OUTPUT_DIR=/share/begin_again_xlnet_2nd_iter_2epoch
+CUDA_VISIBLE_DEVICES=0 python run_classifier.py \
+  --task_name=mypair \
+  --do_train=False \
+  --do_eval=False \
+  --do_predict=True \
+  --data_dir=/share/cwb/COMP90051-Project1/Train_pair \
+  --init_checkpoint=${XLNET_BASE_DIR}/xlnet_model.ckpt \
+  --spiece_model_file=${XLNET_BASE_DIR}/spiece.model \
+  --model_config_path=${XLNET_BASE_DIR}/xlnet_config.json \
+  --max_seq_length=60 \
+  --train_batch_size=32 \
+  --learning_rate=2e-5 \
+  --num_train_epochs=2.0 \
+  --model_dir=${XLNET_OUTPUT_DIR}/model \
+  --output_dir=${XLNET_OUTPUT_DIR}/output \
+  --predict_dir=${XLNET_OUTPUT_DIR}/predict
