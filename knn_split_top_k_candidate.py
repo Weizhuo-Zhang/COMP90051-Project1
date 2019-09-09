@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
 
-k = 101
+k = 71
 split_num = os.getcwd().split('/')[-1].split("split_")[-1]
 
 train_feature_path = "train_feature.npy"
@@ -22,7 +22,7 @@ split_feature = np.load(split_feature_path)
 split_label = np.load(split_label_path)
 
 print("[INFO] Fit knn model")
-knn_clf = KNeighborsClassifier(n_jobs=-1, n_neighbors=k, weights="distance")
+knn_clf = KNeighborsClassifier(n_jobs=-1, n_neighbors=k, weights="distance", metric="cosine")
 knn_clf.fit(train_feature, train_label)
 print("[SUCCESS] Successfully fitted knn model")
 
