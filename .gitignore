@@ -15,5 +15,5 @@ data/BERT_encoding.zip
 data/BERT_encoding/
 data/v1_7
 Train_pair/*.txt
-
+data/
 
