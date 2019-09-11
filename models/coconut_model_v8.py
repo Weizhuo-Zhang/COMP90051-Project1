@@ -5,15 +5,35 @@ from pytorch_transformers import BertTokenizer, BertModel
 
 if torch.cuda.is_available():
     device = torch.device('cuda')
-    print("Using CUDA!")
 else:
     device = torch.device('cpu')
+
+
+class ConvBlock(nn.Module):
+    def __init__(self, in_planes, out_planes, kernel_size):
+        super(ConvBlock, self).__init__()
+        self.in_planes = in_planes
+        self.out_planes = out_planes
+        self.kernel_size = kernel_size
+
+        padding = (kernel_size - 1) // 2
+        self.out_conv = nn.Sequential(nn.Conv2d(in_planes,
+                                                out_planes,
+                                                kernel_size=kernel_size,
+                                                padding=padding,
+                                                bias=False),
+                                      nn.BatchNorm2d(out_planes, track_running_stats=False),
+                                      nn.ReLU())
+
+    def forward(self, x):
+        out = self.out_conv(x)
+        return out
 
 
 class CoconutModel(nn.Module):
     def __init__(self,
                  input_size=768,
-                 drop_out_rate=0.2,
+                 drop_out_rate=0.4,
                  feature_size=192,
                  num_attention_heads=12):
         super(CoconutModel, self).__init__()
@@ -24,7 +44,7 @@ class CoconutModel(nn.Module):
         self.bert_model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True, output_attentions=True)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.create_params()
-        print("Extract Model V6 FeatureOnly")
+        print("Extract Model V8 FeatureOnly")
         if torch.cuda.is_available():
             self.device = torch.device('cuda')
         else:
@@ -32,12 +52,19 @@ class CoconutModel(nn.Module):
         return
 
     def create_params(self):
-        self.feature_layer = nn.Linear(self.input_size, self.feature_size)
+        self.conv1 = ConvBlock(in_planes=13, out_planes=64, kernel_size=3)
+        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.feature_layer = nn.Linear(64, 192)
         self.dropout = nn.Dropout(self.drop_out_rate)
         self.reset_params()
         return
 
     def reset_params(self):
+        for m in self.conv1.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_normal_(m.weight)
+            elif isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
         nn.init.xavier_normal_(self.feature_layer.weight)
 
     def prepare_data_for_coconut_model(self, sentences):
@@ -46,11 +73,9 @@ class CoconutModel(nn.Module):
         tokenized_text_list = []
         for batch_sentences in sentences:
             tokenized_text = ['[CLS]'] + self.tokenizer.tokenize(batch_sentences.lower()) + ['[SEP]']
-            attention_mask = [1] * len(tokenized_text)
             if len(tokenized_text) > 512:
                 # TODO: Drop Long Sequence for now
                 tokenized_text = tokenized_text[:512]
-                attention_mask = attention_mask[:512]
             max_length = max(max_length, len(tokenized_text))
             tokenized_text_list.append(tokenized_text)
 
@@ -85,6 +110,10 @@ class CoconutModel(nn.Module):
         with torch.no_grad():
             outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
         last_hidden_state, feature, hidden_states, attentions = outputs
-        feature = self.feature_layer(feature)
-        feature = F.normalize(feature, dim=1, p=2)
+        input = torch.transpose(torch.stack(list(hidden_states)), 0, 1)
+        input = torch.transpose(input, 2, 3)
+        input = self.conv1(input)
+        input = self.global_avg_pool(input)
+        input = input.view(-1, 64)
+        feature = self.feature_layer(input)
         return feature

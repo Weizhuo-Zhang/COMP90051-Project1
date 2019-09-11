@@ -1,8 +1,9 @@
 import argparse
 import time
 import torch
+import torch.nn as nn
 from tqdm import tqdm
-from models.coconut_model_v6 import CoconutModel
+from models.coconut_model_v10 import CoconutModel
 from project_dataset_triplet import ProjectDataset
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Subset
@@ -14,15 +15,15 @@ parser = argparse.ArgumentParser(description='COMP90051 Project1')
 # Training
 parser.add_argument('--resume', action='store_true', default=False)
 parser.add_argument('--lr', type=float, default=0.001)
-parser.add_argument('--l2_reg', type=float, default=0.00025)
+parser.add_argument('--l2_reg', type=float, default=2.5e-06)
 parser.add_argument('--margin', type=float, default=1.0)
 parser.add_argument('--epoch', type=int, default=310)
 parser.add_argument('--grad_clip_bound', type=float, default=5.0)
-parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--batch_size', type=int, default=1)
 
 # FilePath
 parser.add_argument('--check_point_path', type=str, default="checkpoints/")
-parser.add_argument('--model_version_string', type=str, default="coconut_model_6")
+parser.add_argument('--model_version_string', type=str, default="coconut_model_v10")
 parser.add_argument('--log_every', type=int, default=100)
 
 args = parser.parse_known_args()[0]
@@ -33,8 +34,8 @@ else:
     device = torch.device('cpu')
 
 GLOBAL_STEP = 0
-CURRENT_LOSS = 20
-CURRENT_BEST_LOSS = 20
+CURRENT_ACC = 0
+CURRENT_BEST_ACC = 20
 
 
 for arg in vars(args):
@@ -45,8 +46,9 @@ def get_data_loader():
     data_loaders = {}
 
     data_set = ProjectDataset(file_path="data/triplet/triple_sentences.csv")
-    train_indices = list(range(0, 1000000))
-    valid_indices = list(range(1000000, len(data_set)))
+    total = len(data_set)
+    train_indices = list(range(0, int(total * 0.9)))
+    valid_indices = list(range(int(total * 0.9), len(data_set)))
     train_set = Subset(data_set, train_indices)
     valid_set = Subset(data_set, valid_indices)
 
@@ -68,27 +70,23 @@ def get_data_loader():
 
 
 def save_mode(epoch, model, optimizer, lr_scheduler, center_loss=None, display=False):
-    global GLOBAL_STEP, CURRENT_LOSS, CURRENT_BEST_LOSS
+    global GLOBAL_STEP, CURRENT_ACC, CURRENT_BEST_ACC
     filename = args.check_point_path + args.model_version_string + '.pth'
-    center_loss_state_dict = None
-    if center_loss is not None:
-        center_loss_state_dict = center_loss.state_dict()
     payload = {
         "epoch": epoch + 1,
         "args": args,
         "model_state_dict": model.state_dict(),
         "optimizer_state_dict": optimizer.state_dict(),
         "lr_scheduler": lr_scheduler.state_dict(),
-        "center_loss_state_dict": center_loss_state_dict,
         "global_step": GLOBAL_STEP,
-        "CURRENT_BEST_LOSS": CURRENT_BEST_LOSS
+        "CURRENT_BEST_ACC": CURRENT_BEST_ACC
     }
     torch.save(payload, filename)
     if display:
         print('%s Saved!' % (filename))
 
-    if CURRENT_LOSS < CURRENT_BEST_LOSS:
-        CURRENT_BEST_LOSS = CURRENT_LOSS
+    if CURRENT_ACC > CURRENT_BEST_ACC:
+        CURRENT_BEST_ACC = CURRENT_ACC
         filename = args.check_point_path + args.model_version_string + '_best.pth'
         torch.save(payload, filename)
         if display:
@@ -97,7 +95,7 @@ def save_mode(epoch, model, optimizer, lr_scheduler, center_loss=None, display=F
 
 
 def load_model(model, optimizer, lr_scheduler, center_loss=None):
-    global GLOBAL_STEP, CURRENT_BEST_LOSS
+    global GLOBAL_STEP, CURRENT_BEST_ACC
     filename = args.check_point_path + args.model_version_string + '.pth'
     checkpoints = torch.load(filename)
     epoch = checkpoints["epoch"]
@@ -106,7 +104,7 @@ def load_model(model, optimizer, lr_scheduler, center_loss=None):
     lr_scheduler.load_state_dict(checkpoints["lr_scheduler"])
     lr_scheduler.optimizer = optimizer
     GLOBAL_STEP = checkpoints["global_step"]
-    # CURRENT_BEST_LOSS = checkpoints["CURRENT_BEST_LOSS"]
+    CURRENT_BEST_ACC = checkpoints["CURRENT_BEST_ACC"]
     if center_loss is not None:
         center_loss.load_state_dict(checkpoints["center_loss_state_dict"])
     print('%s Loaded!' % (filename))
@@ -114,7 +112,7 @@ def load_model(model, optimizer, lr_scheduler, center_loss=None):
 
 
 def eval_model(epoch, model, loader):
-    global CURRENT_LOSS
+    global CURRENT_ACC
     model.eval()
     model.to(device)
 
@@ -123,7 +121,7 @@ def eval_model(epoch, model, loader):
     loss_meter = AverageMeter()
     acc_meter = AverageMeter()
 
-    triplet_loss = TripletLoss(margin=args.margin)
+    triplet_loss = TripletLoss(args.margin)
 
     print('=' * 20 + "Model Eval" + '=' * 20)
     for i, batch in tqdm(enumerate(loader)):
@@ -156,11 +154,11 @@ def eval_model(epoch, model, loader):
 
         if (i) % (args.log_every / 2) == 0:
             tqdm.write(display)
-    print("Final Acc: %.6f\n" % (acc_meter.avg))
-    print("Final Loss Acc: %.6f\n" % (loss_meter.avg))
-    print("Final Positive Distance: %.6f\n" % (positive_distance_meter.avg))
-    print("Final Negative Distance: %.6f\n" % (negative_distance_meter.avg))
-    CURRENT_LOSS = loss_meter.avg
+    print("Final Acc: %.6f" % (acc_meter.avg))
+    print("Final Loss Acc: %.6f" % (loss_meter.avg))
+    print("Final Positive Distance: %.6f" % (positive_distance_meter.avg))
+    print("Final Negative Distance: %.6f" % (negative_distance_meter.avg))
+    CURRENT_ACC = acc_meter.avg
     return
 
 
@@ -242,7 +240,7 @@ def train():
                       weight_decay=args.l2_reg)
 
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer=optimizer,
-                                                        milestones=[80, 150],
+                                                        milestones=[1, 3, 5],
                                                         gamma=0.1)
     starting_epoch = 0
 
@@ -254,13 +252,13 @@ def train():
         (starting_epoch, coconut_model, optimizer, lr_scheduler, center_loss) = checkpoints
 
     for epoch in range(starting_epoch, args.epoch):
-        train_model(epoch=epoch,
-                    model=coconut_model,
-                    optimizer=optimizer,
-                    lr_scheduler=lr_scheduler,
-                    loader=data_loaders["train_loader"],
-                    center_loss=center_loss)
-        lr_scheduler.step()
+        # train_model(epoch=epoch,
+        #             model=coconut_model,
+        #             optimizer=optimizer,
+        #             lr_scheduler=lr_scheduler,
+        #             loader=data_loaders["train_loader"],
+        #             center_loss=center_loss)
+        # lr_scheduler.step()
         eval_model(epoch=epoch,
                    model=coconut_model,
                    loader=data_loaders["dev_loader"])

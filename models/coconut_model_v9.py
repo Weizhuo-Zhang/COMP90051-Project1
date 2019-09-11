@@ -13,6 +13,8 @@ else:
 class CoconutModel(nn.Module):
     def __init__(self,
                  input_size=768,
+                 num_of_group=98,
+                 num_of_classes=95,
                  drop_out_rate=0.2,
                  feature_size=192,
                  num_attention_heads=12):
@@ -21,10 +23,12 @@ class CoconutModel(nn.Module):
         self.drop_out_rate = drop_out_rate
         self.num_attention_heads = num_attention_heads
         self.feature_size = feature_size
+        self.num_of_group = num_of_group
+        self.num_of_classes = num_of_classes
         self.bert_model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True, output_attentions=True)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.create_params()
-        print("Extract Model V6 FeatureOnly")
+        print("Extract Model V9")
         if torch.cuda.is_available():
             self.device = torch.device('cuda')
         else:
@@ -32,13 +36,20 @@ class CoconutModel(nn.Module):
         return
 
     def create_params(self):
-        self.feature_layer = nn.Linear(self.input_size, self.feature_size)
+        self.group_classfiy = nn.Linear(self.input_size, self.num_of_group, bias=False)
+        self.group_classfiy_id_layers = nn.ModuleList()
+        for i in range(self.num_of_group):
+            self.group_classfiy_id_layers.append(nn.Linear(self.input_size, self.num_of_classes, bias=False))
+
         self.dropout = nn.Dropout(self.drop_out_rate)
         self.reset_params()
         return
 
     def reset_params(self):
-        nn.init.xavier_normal_(self.feature_layer.weight)
+        for m in self.group_classfiy_id_layers.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_normal_(m.weight)
+        nn.init.xavier_normal_(self.group_classfiy.weight)
 
     def prepare_data_for_coconut_model(self, sentences):
         sentences = list(sentences)
@@ -85,6 +96,15 @@ class CoconutModel(nn.Module):
         with torch.no_grad():
             outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
         last_hidden_state, feature, hidden_states, attentions = outputs
-        feature = self.feature_layer(feature)
-        feature = F.normalize(feature, dim=1, p=2)
-        return feature
+        out = self.dropout(feature)
+        group_pred = self.group_classfiy(out)
+        in_group_pred = None
+        for i in range(self.num_of_group):
+            item = self.group_classfiy_id_layers[i](out)
+            item = item[None, :, :]
+            if in_group_pred is None:
+                in_group_pred = item
+            else:
+                in_group_pred = torch.cat([in_group_pred, item], dim=0)
+        in_group_pred = torch.transpose(in_group_pred, 0, 1)
+        return group_pred, in_group_pred

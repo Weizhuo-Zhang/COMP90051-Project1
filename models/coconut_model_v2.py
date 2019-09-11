@@ -18,9 +18,10 @@ class CoconutModel(nn.Module):
 
     def create_params(self):
         self.dropout = nn.Dropout(self.drop_out_rate)
-        self.bn = nn.BatchNorm1d(self.input_size)
+        self.fc1 = nn.Linear(self.input_size, 256)
+        self.bn = nn.BatchNorm1d(256)
         self.tanh = nn.Tanh()
-        self.features = nn.Linear(self.input_size, self.feature_size)
+        self.features = nn.Linear(256, self.feature_size)
         self.classfiy = nn.Linear(self.feature_size, self.num_of_classes, bias=False)
         self.reset_params()
         return
@@ -35,9 +36,9 @@ class CoconutModel(nn.Module):
 
     def forward(self, input_tensor):
         last_hidden_state, pooled_output, hidden_states, attentions = input_tensor
-        pooled_output = self.dropout(pooled_output)
-        out = self.bn(pooled_output)
+        out = self.fc1(pooled_output)
+        out = self.bn(out)
         out = self.tanh(out)
         features = self.features(out)
         out = self.classfiy(features)
-        return features, out
+        return out

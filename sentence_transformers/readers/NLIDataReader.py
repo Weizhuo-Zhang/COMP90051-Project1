@@ -8,10 +8,11 @@ class NLIDataReader(object):
     """
     Reads in the Stanford NLI dataset and the MultiGenre NLI dataset
     """
-    def __init__(self, dataset_folder, delimiter="\t", quoting=csv.QUOTE_NONE):
+    def __init__(self, dataset_folder, delimiter="\t", quoting=csv.QUOTE_NONE, header=False):
         self.dataset_folder = dataset_folder
         self.delimiter = delimiter
         self.quoting = quoting
+        self.header = header
 
     def get_examples(self, filename, max_examples=0):
         """
@@ -19,9 +20,15 @@ class NLIDataReader(object):
         Expects that self.dataset_folder contains the files s1.$data_split.gz,  s2.$data_split.gz,
         labels.$data_split.gz, e.g., for the train split, s1.train.gz, s2.train.gz, labels.train.gz
         """
-        data = csv.reader((x.replace('\0', '') for x in (open(os.path.join(self.dataset_folder, filename), encoding="utf-8"))),
-                          delimiter=self.delimiter,
-                          quoting=self.quoting)
+        if self.header:
+            data = csv.reader((x.replace('\0', '') for x in (open(os.path.join(self.dataset_folder, filename), encoding="utf-8"))),
+                              delimiter=self.delimiter,
+                              quoting=self.quoting)
+            next(data)
+        else:
+            data = csv.reader((x.replace('\0', '') for x in (open(os.path.join(self.dataset_folder, filename), encoding="utf-8"))),
+                              delimiter=self.delimiter,
+                              quoting=self.quoting)
 
         examples = []
         id = 0

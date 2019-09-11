@@ -5,7 +5,6 @@ from pytorch_transformers import BertTokenizer, BertModel
 
 if torch.cuda.is_available():
     device = torch.device('cuda')
-    print("Using CUDA!")
 else:
     device = torch.device('cpu')
 
@@ -13,32 +12,24 @@ else:
 class CoconutModel(nn.Module):
     def __init__(self,
                  input_size=768,
-                 drop_out_rate=0.2,
+                 drop_out_rate=0.4,
+                 num_of_classes=95,
                  feature_size=192,
                  num_attention_heads=12):
         super(CoconutModel, self).__init__()
         self.input_size = input_size
         self.drop_out_rate = drop_out_rate
+        self.num_of_classes = num_of_classes
         self.num_attention_heads = num_attention_heads
         self.feature_size = feature_size
         self.bert_model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True, output_attentions=True)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.create_params()
-        print("Extract Model V6 FeatureOnly")
+        print("Extract Model V7 FeatureOnly")
         if torch.cuda.is_available():
             self.device = torch.device('cuda')
         else:
             self.device = torch.device('cpu')
         return
-
-    def create_params(self):
-        self.feature_layer = nn.Linear(self.input_size, self.feature_size)
-        self.dropout = nn.Dropout(self.drop_out_rate)
-        self.reset_params()
-        return
-
-    def reset_params(self):
-        nn.init.xavier_normal_(self.feature_layer.weight)
 
     def prepare_data_for_coconut_model(self, sentences):
         sentences = list(sentences)
@@ -82,9 +73,7 @@ class CoconutModel(nn.Module):
 
     def forward(self, sentences):
         tokens_tensor, segments_tensor, attention_tensor = self.prepare_data_for_coconut_model(sentences)
-        with torch.no_grad():
-            outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
+        outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
         last_hidden_state, feature, hidden_states, attentions = outputs
-        feature = self.feature_layer(feature)
         feature = F.normalize(feature, dim=1, p=2)
         return feature

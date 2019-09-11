@@ -1,11 +1,9 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from pytorch_transformers import BertTokenizer, BertModel
 
 if torch.cuda.is_available():
     device = torch.device('cuda')
-    print("Using CUDA!")
 else:
     device = torch.device('cpu')
 
@@ -13,18 +11,20 @@ else:
 class CoconutModel(nn.Module):
     def __init__(self,
                  input_size=768,
-                 drop_out_rate=0.2,
+                 drop_out_rate=0.4,
+                 num_of_classes=1132,
                  feature_size=192,
                  num_attention_heads=12):
         super(CoconutModel, self).__init__()
         self.input_size = input_size
         self.drop_out_rate = drop_out_rate
+        self.num_of_classes = num_of_classes
         self.num_attention_heads = num_attention_heads
         self.feature_size = feature_size
         self.bert_model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True, output_attentions=True)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.create_params()
-        print("Extract Model V6 FeatureOnly")
+        print("Extract Model V5 Classes: %d" % (self.num_of_classes))
         if torch.cuda.is_available():
             self.device = torch.device('cuda')
         else:
@@ -32,13 +32,15 @@ class CoconutModel(nn.Module):
         return
 
     def create_params(self):
-        self.feature_layer = nn.Linear(self.input_size, self.feature_size)
+        self.features_layer = nn.Linear(self.input_size, 192, bias=False)
+        self.classfiy = nn.Linear(192, self.num_of_classes, bias=False)
         self.dropout = nn.Dropout(self.drop_out_rate)
         self.reset_params()
         return
 
     def reset_params(self):
-        nn.init.xavier_normal_(self.feature_layer.weight)
+        nn.init.xavier_normal_(self.features_layer.weight)
+        nn.init.xavier_normal_(self.classfiy.weight)
 
     def prepare_data_for_coconut_model(self, sentences):
         sentences = list(sentences)
@@ -85,6 +87,7 @@ class CoconutModel(nn.Module):
         with torch.no_grad():
             outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
         last_hidden_state, feature, hidden_states, attentions = outputs
-        feature = self.feature_layer(feature)
-        feature = F.normalize(feature, dim=1, p=2)
-        return feature
+        feature = self.features_layer(feature)
+        out = self.dropout(feature)
+        out = self.classfiy(out)
+        return feature, out

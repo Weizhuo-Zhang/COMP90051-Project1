@@ -1,36 +1,49 @@
-import torch
-import torch.nn as nn
+from sentence_transformers import SentenceTransformer
+
+
+# Input file path
+# test_tweets_unlabeled_dataframe_v1_7
+train_data_path = "data/v7/train_set_v1_7_full.txt"
+test_data_path = "data/v7/test_tweets_unlabeled_dataframe_v1_7.txt"
+
+# Output file path
+train_embed_out_path = 'data/v7/full_siamese_bert_base_cased_v7.0C_triplet_epoch1'
+test_embed_out_path = 'data/v7/test_siamese_bert_base_cased_v7.0C_triplet_epoch1'
+checkpoints_path = 'checkpoints/sentence_transformers/bert_base_cased_200_v7.0C_triplet_epoch1'
+
+
+test_model = SentenceTransformer(checkpoints_path)
+
 import pandas as pd
-from project_dataset_prob import ProjectDataset
-from torch.utils.data import DataLoader
-from models.coconut_model_v13 import CoconutModel
-from tqdm import tqdm
+import numpy as np
 
-if torch.cuda.is_available():
-    device = torch.device('cuda')
-else:
-    device = torch.device('cpu')
+def get_sentence_list(data_path, sentence_index=0):
+    df_data = pd.read_csv(data_path, sep='\t', header=None)
+    df_data = np.array(df_data)
+    sentence_list = df_data[:, sentence_index]
+    return sentence_list
+
+def get_embed(sentences):
+    return test_model.encode(sentences, batch_size=512)
+
+# Read Data
+train_sentence = list(get_sentence_list(train_data_path, sentence_index=1))
+test_sentence = list(get_sentence_list(test_data_path, sentence_index=0))
+
+print(len(train_sentence), type(train_sentence), type(train_sentence[0]))
+print(len(test_sentence), type(test_sentence), type(test_sentence[0]))
+
+test_feature_list = get_embed(test_sentence)
+train_feature_list = get_embed(train_sentence)
+print(len(test_feature_list), len(train_feature_list))
 
 
-dataset = ProjectDataset(file_path="data/pair_prob/k_top_pair_file_100_of_1000.csv")
-data_loader = DataLoader(dataset, batch_size=128, shuffle=False, pin_memory=True, num_workers=4)
 
-checkpoint_filename = 'checkpoints/v13_best_epoch2.pth'
-checkpoints = torch.load(checkpoint_filename, map_location=device)
-model = CoconutModel()
-model.load_state_dict(checkpoints["model_state_dict"])
-model.eval()
-model.to(device)
+test_feature_list_np_array = np.asarray(test_feature_list)
+train_feature_list_np_array = np.asarray(train_feature_list)
 
-df = pd.DataFrame()
+print(test_feature_list_np_array.shape)
+print(train_feature_list_np_array.shape)
 
-softmax = nn.Softmax(dim=1)
-for i, batch in tqdm(enumerate(data_loader)):
-    sentence1, sentence2 = batch
-    with torch.no_grad():
-        pred = model((sentence1, sentence2))
-    pred = softmax(pred).tolist()
-    new_df = pd.DataFrame(pred)
-    df = df.append(new_df)
-
-export_csv = df.to_csv('data/pair_prob/prob_out_k_top_pair_file_100_of_1000.csv', sep='\t', index=None, header=None)
+np.save(test_embed_out_path, test_feature_list_np_array)
+np.save(train_embed_out_path, train_feature_list_np_array)

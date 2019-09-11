@@ -1,5 +1,5 @@
 import torch
-from models.coconut_model_v6 import CoconutModel
+from models.coconut_model_v11 import CoconutModel
 
 
 class FeatureExtract:
@@ -7,15 +7,16 @@ class FeatureExtract:
                  feature_size=192,
                  checkpoints_path="checkpoints/coconut_extract_model_v2.pth"):
 
-        self.feature_size = feature_size
-        self.checkpoints_path = checkpoints_path
-        self.model = CoconutModel(feature_size=feature_size)
         if torch.cuda.is_available():
-            self.model = self.model.cuda()
-            self.bert_model = self.bert_model.cuda()
             self.device = torch.device('cuda')
         else:
             self.device = torch.device('cpu')
+
+        self.feature_size = feature_size
+        self.checkpoints_path = checkpoints_path
+        self.model = CoconutModel(feature_size=feature_size)
+        self.model.to(self.device)
+        self.model.bert_model.to(self.device)
         self.load_model()
         return
 
@@ -32,7 +33,9 @@ class FeatureExtract:
         with torch.no_grad():
             features = self.model(sentences)
         if torch.cuda.is_available():
-            return features.cpu().detach().numpy()
+            features = features.cpu().detach().numpy()
+            torch.cuda.empty_cache()
+            return features
         return features.numpy()
 
 

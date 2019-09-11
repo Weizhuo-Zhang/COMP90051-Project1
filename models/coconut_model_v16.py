@@ -23,7 +23,7 @@ class CoconutModel(nn.Module):
         self.bert_model = BertModel.from_pretrained('bert-base-cased', output_hidden_states=True, output_attentions=True)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-cased', do_lower_case=False)
         self.create_params()
-        print("Extract Model V13 BertBinary")
+        print("Extract Model V16 FeatureOnly")
         if torch.cuda.is_available():
             self.device = torch.device('cuda')
         else:
@@ -31,13 +31,7 @@ class CoconutModel(nn.Module):
         return
 
     def create_params(self):
-        self.feature_layer = nn.Sequential(nn.Linear(self.input_size, 512),
-                                           nn.BatchNorm1d(512),
-                                           nn.Tanh(),
-                                           nn.Linear(512, 256),
-                                           nn.BatchNorm1d(256),
-                                           nn.Tanh(),
-                                           nn.Linear(256, 2))
+        self.feature_layer = nn.Sequential(nn.Linear(self.input_size, 2))
         self.dropout = nn.Dropout(self.drop_out_rate)
         self.reset_params()
         return
@@ -52,10 +46,12 @@ class CoconutModel(nn.Module):
         max_length = 0
         tokenized_text_list = []
         for batch_sentences in sentences:
-            tokenized_text = ['[CLS]'] + self.tokenizer.tokenize(batch_sentences) + ['[SEP]']
+            tokenized_text = ['[CLS]'] + self.tokenizer.tokenize(batch_sentences.lower()) + ['[SEP]']
+            attention_mask = [1] * len(tokenized_text)
             if len(tokenized_text) > 30:
                 # TODO: Drop Long Sequence for now
                 tokenized_text = tokenized_text[:30]
+                attention_mask = attention_mask[:30]
             max_length = max(max_length, len(tokenized_text))
             tokenized_text_list.append(tokenized_text)
 
@@ -132,7 +128,7 @@ class CoconutModel(nn.Module):
 
         return tokens_tensor, segments_tensor, attention_tensor
 
-    def forward(self, sentence, is_pair=True, feature_type=None):
+    def forward(self, sentence, is_pair=True, get_features=False):
         if is_pair:
             sentence1, sentence2 = sentence
             tokens_tensor, segments_tensor, attention_tensor = self.prepare_data_for_coconut_model_pair(sentence1, sentence2)
@@ -140,24 +136,8 @@ class CoconutModel(nn.Module):
             tokens_tensor, segments_tensor, attention_tensor = self.prepare_data_for_coconut_model(sentence)
         outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
         last_hidden_state, cls_feature, hidden_states, attentions = outputs
-        # cls_feature = self.dropout(cls_feature)
+        cls_feature = self.dropout(cls_feature)
         out = self.feature_layer(cls_feature)
-
-        if feature_type == 'CLS':
+        if get_features:
             return cls_feature
-        elif feature_type == 'Mean':
-            # hidden_states = list(hidden_states)[-2]
-            # attention_tensor_expand = attention_tensor.unsqueeze(2).expand(-1, attention_tensor.size(1), self.input_size).type(torch.FloatTensor).to(device)
-            # hidden_states = attention_tensor_expand * hidden_states
-            # hidden_states = last_hidden_state.sum(dim=1).type(torch.FloatTensor).to(device)
-            # attention_tensor_sum = attention_tensor.sum(dim=1).view(-1, 1).type(torch.FloatTensor).to(device)
-            # mean_pooling_feature = hidden_states / attention_tensor_sum
-            token_embeddings = list(hidden_states)[-2]
-            input_mask_expanded = attention_tensor.unsqueeze(-1).expand(token_embeddings.size()).float()
-            sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
-            sum_mask = input_mask_expanded.sum(1)
-            # sum_mask = torch.clamp(sum_mask, min=1e-10)
-            sum_mask = sum_mask + 1e-10
-            mean_pooling_feature = (sum_embeddings / sum_mask)
-            return mean_pooling_feature
         return out

@@ -13,7 +13,7 @@ else:
 class CoconutModel(nn.Module):
     def __init__(self,
                  input_size=768,
-                 drop_out_rate=0.2,
+                 drop_out_rate=0.1,
                  feature_size=192,
                  num_attention_heads=12):
         super(CoconutModel, self).__init__()
@@ -24,7 +24,7 @@ class CoconutModel(nn.Module):
         self.bert_model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True, output_attentions=True)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.create_params()
-        print("Extract Model V6 FeatureOnly")
+        print("Extract Model V14 FeatureOnly")
         if torch.cuda.is_available():
             self.device = torch.device('cuda')
         else:
@@ -32,13 +32,23 @@ class CoconutModel(nn.Module):
         return
 
     def create_params(self):
-        self.feature_layer = nn.Linear(self.input_size, self.feature_size)
+        self.mean_avg_pool = nn.AdaptiveAvgPool2d((1, self.input_size))
+        self.cls_feature_layer = nn.Sequential(nn.Linear(self.input_size, self.feature_size),
+                                               nn.BatchNorm1d(self.feature_size),
+                                               nn.Tanh())
+        self.hidden_feature_layer = nn.Sequential(nn.Linear(self.input_size, self.feature_size),
+                                                  nn.BatchNorm1d(self.feature_size),
+                                                  nn.Tanh())
+        self.feature_layer = nn.Sequential(nn.Linear(self.feature_size * 2, self.feature_size),
+                                           nn.Tanh())
         self.dropout = nn.Dropout(self.drop_out_rate)
         self.reset_params()
         return
 
     def reset_params(self):
-        nn.init.xavier_normal_(self.feature_layer.weight)
+        for m in self.feature_layer.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_normal_(m.weight)
 
     def prepare_data_for_coconut_model(self, sentences):
         sentences = list(sentences)
@@ -82,9 +92,19 @@ class CoconutModel(nn.Module):
 
     def forward(self, sentences):
         tokens_tensor, segments_tensor, attention_tensor = self.prepare_data_for_coconut_model(sentences)
-        with torch.no_grad():
-            outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
-        last_hidden_state, feature, hidden_states, attentions = outputs
+        outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
+        last_hidden_state, cls_feature, hidden_states, attentions = outputs
+        attention_tensor_expand = attention_tensor.unsqueeze(2).expand(-1, attention_tensor.size(1), self.input_size).type(torch.FloatTensor).to(device)
+        last_hidden_state = attention_tensor_expand * last_hidden_state
+        last_hidden_state = last_hidden_state.sum(dim=1).type(torch.FloatTensor).to(device)
+        attention_tensor_sum = attention_tensor.sum(dim=1).view(-1, 1).type(torch.FloatTensor).to(device)
+        hidden_states_feature = last_hidden_state / attention_tensor_sum
+
+        cls_feature = self.cls_feature_layer(cls_feature)
+        hidden_states_feature = self.hidden_feature_layer(hidden_states_feature)
+
+        feature = torch.cat([hidden_states_feature, cls_feature], dim=1)
+        feature = self.dropout(feature)
         feature = self.feature_layer(feature)
         feature = F.normalize(feature, dim=1, p=2)
         return feature

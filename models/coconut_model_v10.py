@@ -24,7 +24,7 @@ class CoconutModel(nn.Module):
         self.bert_model = BertModel.from_pretrained('bert-base-uncased', output_hidden_states=True, output_attentions=True)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.create_params()
-        print("Extract Model V6 FeatureOnly")
+        print("Extract Model V10 FeatureOnly")
         if torch.cuda.is_available():
             self.device = torch.device('cuda')
         else:
@@ -32,7 +32,11 @@ class CoconutModel(nn.Module):
         return
 
     def create_params(self):
-        self.feature_layer = nn.Linear(self.input_size, self.feature_size)
+        self.feature_lstm = nn.LSTM(input_size=self.input_size,
+                                    hidden_size=64,
+                                    num_layers=1,
+                                    batch_first=True)
+        self.feature_layer = nn.Linear(64, self.feature_size)
         self.dropout = nn.Dropout(self.drop_out_rate)
         self.reset_params()
         return
@@ -82,9 +86,10 @@ class CoconutModel(nn.Module):
 
     def forward(self, sentences):
         tokens_tensor, segments_tensor, attention_tensor = self.prepare_data_for_coconut_model(sentences)
-        with torch.no_grad():
-            outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
+        outputs = self.bert_model(tokens_tensor, token_type_ids=segments_tensor, attention_mask=attention_tensor)
         last_hidden_state, feature, hidden_states, attentions = outputs
-        feature = self.feature_layer(feature)
+        lstm_out, (last_hidden_state, last_cell_state) = self.feature_lstm(last_hidden_state)
+        feature = self.feature_layer(last_hidden_state)
         feature = F.normalize(feature, dim=1, p=2)
+        feature = feature.view(-1, 192)
         return feature
